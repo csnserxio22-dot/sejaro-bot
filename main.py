@@ -1,116 +1,105 @@
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+import telebot
+from telebot import types
 from config import BOT_TOKEN, ADMIN_ID, PRODUCTS, PAYMENT_DETAILS
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Хранилище корзин пользователей: {user_id: {product_name: quantity}}
+bot = telebot.TeleBot(BOT_TOKEN)
 user_carts = {}
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+@bot.message_handler(commands=['start'])
+def start(message):
     """Команда /start - сразу показывает каталог товаров"""
-    user_id = update.effective_user.id
+    user_id = message.from_user.id
     user_carts[user_id] = {}
 
-    keyboard = []
+    keyboard = types.InlineKeyboardMarkup()
     for product_name in PRODUCTS.keys():
-        keyboard.append([InlineKeyboardButton(f'ℹ️ {product_name}', callback_data=f'view_{product_name}')])
+        keyboard.add(types.InlineKeyboardButton(f'ℹ️ {product_name}', callback_data=f'view_{product_name}'))
 
-    keyboard.append([InlineKeyboardButton('🛒 Корзина', callback_data='cart')])
+    keyboard.add(types.InlineKeyboardButton('🛒 Корзина', callback_data='cart'))
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text('🏪 Добро пожаловать в магазин Sejaro!\n\nВыберите товар:', reply_markup=reply_markup)
+    bot.send_message(
+        message.chat.id,
+        '🏪 Добро пожаловать в магазин Sejaro!\n\nВыберите товар:',
+        reply_markup=keyboard
+    )
 
 
-async def show_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
+@bot.callback_query_handler(func=lambda call: call.data == 'show_catalog')
+def show_catalog(call):
     """Показывает каталог товаров"""
-    query = update.callback_query
-    await query.answer()
+    bot.answer_callback_query(call.id)
 
-    keyboard = []
+    keyboard = types.InlineKeyboardMarkup()
     for product_name in PRODUCTS.keys():
-        keyboard.append([InlineKeyboardButton(f'ℹ️ {product_name}', callback_data=f'view_{product_name}')])
+        keyboard.add(types.InlineKeyboardButton(f'ℹ️ {product_name}', callback_data=f'view_{product_name}'))
 
-    keyboard.append([InlineKeyboardButton('⬅️ Назад', callback_data='back_to_start')])
+    keyboard.add(types.InlineKeyboardButton('⬅️ Назад', callback_data='back_to_start'))
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    try:
-        await query.edit_message_text('🏪 Выберите товар:', reply_markup=reply_markup)
-    except:
-        await query.delete_message()
-        await context.bot.send_message(
-            chat_id=query.from_user.id,
-            text='🏪 Выберите товар:',
-            reply_markup=reply_markup
-        )
+    bot.edit_message_text(
+        '🏪 Выберите товар:',
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboard
+    )
 
 
-async def back_to_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+@bot.callback_query_handler(func=lambda call: call.data == 'back_to_start')
+def back_to_start(call):
     """Возвращает на главный экран"""
-    query = update.callback_query
-    await query.answer()
+    bot.answer_callback_query(call.id)
 
-    keyboard = []
+    keyboard = types.InlineKeyboardMarkup()
     for product_name in PRODUCTS.keys():
-        keyboard.append([InlineKeyboardButton(f'ℹ️ {product_name}', callback_data=f'view_{product_name}')])
+        keyboard.add(types.InlineKeyboardButton(f'ℹ️ {product_name}', callback_data=f'view_{product_name}'))
 
-    keyboard.append([InlineKeyboardButton('🛒 Корзина', callback_data='cart')])
+    keyboard.add(types.InlineKeyboardButton('🛒 Корзина', callback_data='cart'))
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    try:
-        await query.edit_message_text('🏪 Добро пожаловать в магазин Sejaro!\n\nВыберите товар:', reply_markup=reply_markup)
-    except:
-        await query.delete_message()
-        await context.bot.send_message(
-            chat_id=query.from_user.id,
-            text='🏪 Добро пожаловать в магазин Sejaro!\n\nВыберите товар:',
-            reply_markup=reply_markup
-        )
+    bot.edit_message_text(
+        '🏪 Добро пожаловать в магазин Sejaro!\n\nВыберите товар:',
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboard
+    )
 
 
-async def view_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
+@bot.callback_query_handler(func=lambda call: call.data.startswith('view_'))
+def view_product(call):
     """Показывает товар с фото и описанием"""
-    query = update.callback_query
-    await query.answer()
+    bot.answer_callback_query(call.id)
 
-    user_id = query.from_user.id
-    product_name = query.data.replace('view_', '')
+    product_name = call.data.replace('view_', '')
     product = PRODUCTS[product_name]
 
     price = product['price']
     description = product['description']
     photo_url = product['photo_url']
 
-    # Текст с описанием и ценой
     text = f'{description}\n\n💰 Цена: {price}₸'
 
-    keyboard = [
-        [InlineKeyboardButton('➕ Добавить в корзину', callback_data=f'add_{product_name}')],
-        [InlineKeyboardButton('⬅️ Назад в меню', callback_data='show_catalog')],
-        [InlineKeyboardButton('🛒 Корзина', callback_data='cart')]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton('➕ Добавить в корзину', callback_data=f'add_{product_name}'))
+    keyboard.add(types.InlineKeyboardButton('⬅️ Назад в меню', callback_data='show_catalog'))
+    keyboard.add(types.InlineKeyboardButton('🛒 Корзина', callback_data='cart'))
 
-    # Удаляем старое сообщение и отправляем с фото
-    await query.delete_message()
-    await context.bot.send_photo(
-        chat_id=query.from_user.id,
+    bot.delete_message(call.message.chat.id, call.message.message_id)
+    bot.send_photo(
+        call.message.chat.id,
         photo=photo_url,
         caption=text,
-        reply_markup=reply_markup
+        reply_markup=keyboard
     )
 
 
-async def add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
+@bot.callback_query_handler(func=lambda call: call.data.startswith('add_'))
+def add_to_cart(call):
     """Добавляет товар в корзину"""
-    query = update.callback_query
-    await query.answer('✅ Добавлено в корзину!')
-
-    user_id = query.from_user.id
-    product_name = query.data.replace('add_', '')
+    user_id = call.from_user.id
+    product_name = call.data.replace('add_', '')
 
     if user_id not in user_carts:
         user_carts[user_id] = {}
@@ -120,21 +109,23 @@ async def add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         user_carts[user_id][product_name] = 1
 
+    bot.answer_callback_query(call.id, '✅ Добавлено в корзину!', show_alert=False)
 
-async def show_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+@bot.callback_query_handler(func=lambda call: call.data == 'cart')
+def show_cart(call):
     """Показывает корзину"""
-    query = update.callback_query
-    await query.answer()
+    bot.answer_callback_query(call.id)
 
-    user_id = query.from_user.id
+    user_id = call.from_user.id
     cart = user_carts.get(user_id, {})
 
     if not cart:
-        try:
-            await query.edit_message_text('🛒 Корзина пуста')
-        except:
-            await query.delete_message()
-            await context.bot.send_message(chat_id=query.from_user.id, text='🛒 Корзина пуста')
+        bot.edit_message_text(
+            '🛒 Корзина пуста',
+            call.message.chat.id,
+            call.message.message_id
+        )
         return
 
     cart_text = '🛒 Ваша корзина:\n\n'
@@ -148,84 +139,54 @@ async def show_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     cart_text += f'\n💰 Итого: {total}₸'
 
-    keyboard = [
-        [InlineKeyboardButton('➕ Добавить ещё', callback_data='show_catalog')],
-        [InlineKeyboardButton('📦 Заказать', callback_data='pay')],
-        [InlineKeyboardButton('🗑️ Очистить корзину', callback_data='clear_cart')]
-    ]
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton('➕ Добавить ещё', callback_data='show_catalog'))
+    keyboard.add(types.InlineKeyboardButton('📦 Заказать', callback_data='pay'))
+    keyboard.add(types.InlineKeyboardButton('🗑️ Очистить корзину', callback_data='clear_cart'))
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    try:
-        await query.edit_message_text(cart_text, reply_markup=reply_markup)
-    except:
-        await query.delete_message()
-        await context.bot.send_message(
-            chat_id=query.from_user.id,
-            text=cart_text,
-            reply_markup=reply_markup
-        )
+    bot.edit_message_text(
+        cart_text,
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboard
+    )
 
 
-async def back_to_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Возвращает в меню товаров"""
-    query = update.callback_query
-    await query.answer()
-
-    keyboard = []
-    for product_name in PRODUCTS.keys():
-        keyboard.append([InlineKeyboardButton(f'ℹ️ {product_name}', callback_data=f'view_{product_name}')])
-    keyboard.append([InlineKeyboardButton('🛒 Корзина', callback_data='cart')])
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    try:
-        await query.edit_message_text('🏪 Выберите товар:', reply_markup=reply_markup)
-    except:
-        await query.delete_message()
-        await context.bot.send_message(
-            chat_id=query.from_user.id,
-            text='🏪 Выберите товар:',
-            reply_markup=reply_markup
-        )
-
-
-async def clear_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
+@bot.callback_query_handler(func=lambda call: call.data == 'clear_cart')
+def clear_cart(call):
     """Очищает корзину"""
-    query = update.callback_query
-    await query.answer()
+    bot.answer_callback_query(call.id)
 
-    user_id = query.from_user.id
+    user_id = call.from_user.id
     user_carts[user_id] = {}
 
-    try:
-        await query.edit_message_text('🛒 Корзина очищена')
-    except:
-        await query.delete_message()
-        await context.bot.send_message(chat_id=query.from_user.id, text='🛒 Корзина очищена')
+    bot.edit_message_text(
+        '🛒 Корзина очищена',
+        call.message.chat.id,
+        call.message.message_id
+    )
 
 
-async def process_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+@bot.callback_query_handler(func=lambda call: call.data == 'pay')
+def process_payment(call):
     """Обрабатывает оплату"""
-    query = update.callback_query
-    await query.answer()
+    bot.answer_callback_query(call.id)
 
-    user_id = query.from_user.id
+    user_id = call.from_user.id
     cart = user_carts.get(user_id, {})
 
     if not cart:
-        try:
-            await query.edit_message_text('🛒 Корзина пуста')
-        except:
-            await query.delete_message()
-            await context.bot.send_message(chat_id=query.from_user.id, text='🛒 Корзина пуста')
+        bot.edit_message_text(
+            '🛒 Корзина пуста',
+            call.message.chat.id,
+            call.message.message_id
+        )
         return
 
-    # Считаем сумму
     total = sum(PRODUCTS[name]['price'] * qty for name, qty in cart.items())
 
-    # Отправляем заказ администратору
     order_text = f'📦 Новый заказ!\n\n'
-    order_text += f'👤 Покупатель: {query.from_user.first_name} (@{query.from_user.username})\n'
+    order_text += f'👤 Покупатель: {call.from_user.first_name} (@{call.from_user.username})\n'
     order_text += f'🆔 ID: {user_id}\n\n'
     order_text += '📋 Товары:\n'
 
@@ -236,54 +197,31 @@ async def process_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     order_text += f'\n💰 Сумма к оплате: {total}₸'
 
-    # Отправляем админу
     try:
-        await context.bot.send_message(ADMIN_ID, order_text)
+        bot.send_message(ADMIN_ID, order_text)
     except Exception as e:
         logger.error(f'Ошибка при отправке админу: {e}')
-        try:
-            await query.edit_message_text('❌ Ошибка при оформлении заказа')
-        except:
-            await query.delete_message()
-            await context.bot.send_message(chat_id=query.from_user.id, text='❌ Ошибка при оформлении заказа')
+        bot.edit_message_text(
+            '❌ Ошибка при оформлении заказа',
+            call.message.chat.id,
+            call.message.message_id
+        )
         return
 
-    # Показываем информацию покупателю
     payment_msg = f'✅ Заказ отправлен администратору!\n\n{PAYMENT_DETAILS}'
-    try:
-        await query.edit_message_text(payment_msg)
-    except:
-        await query.delete_message()
-        await context.bot.send_message(chat_id=query.from_user.id, text=payment_msg)
+    bot.edit_message_text(
+        payment_msg,
+        call.message.chat.id,
+        call.message.message_id
+    )
 
-    # Очищаем корзину
     user_carts[user_id] = {}
 
 
 def main():
     """Запуск бота"""
-    import asyncio
-
-    application = Application.builder().token(BOT_TOKEN).build()
-
-    application.add_handler(CommandHandler('start', start))
-    application.add_handler(CallbackQueryHandler(show_catalog, pattern='^show_catalog$'))
-    application.add_handler(CallbackQueryHandler(back_to_start, pattern='^back_to_start$'))
-    application.add_handler(CallbackQueryHandler(view_product, pattern='^view_'))
-    application.add_handler(CallbackQueryHandler(add_to_cart, pattern='^add_'))
-    application.add_handler(CallbackQueryHandler(show_cart, pattern='^cart$'))
-    application.add_handler(CallbackQueryHandler(back_to_menu, pattern='^back_to_menu$'))
-    application.add_handler(CallbackQueryHandler(clear_cart, pattern='^clear_cart$'))
-    application.add_handler(CallbackQueryHandler(process_payment, pattern='^pay$'))
-
     logger.info('Бот запущен...')
-
-    try:
-        asyncio.get_event_loop()
-    except RuntimeError:
-        asyncio.set_event_loop(asyncio.new_event_loop())
-
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    bot.infinity_polling()
 
 
 if __name__ == '__main__':
