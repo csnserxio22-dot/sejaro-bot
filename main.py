@@ -261,6 +261,18 @@ def process_payment(call):
 
     user_carts[user_id] = {}
 
+    # Показываем каталог снова
+    keyboard = types.InlineKeyboardMarkup()
+    for product_name in PRODUCTS.keys():
+        keyboard.add(types.InlineKeyboardButton(f'ℹ️ {product_name}', callback_data=f'view_{product_name}'))
+    keyboard.add(types.InlineKeyboardButton('🛒 Корзина', callback_data='cart'))
+
+    bot.send_message(
+        call.message.chat.id,
+        '🏪 Выберите товар для следующего заказа:',
+        reply_markup=keyboard
+    )
+
 
 def main():
     """Запуск бота"""
