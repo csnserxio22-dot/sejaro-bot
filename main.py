@@ -260,7 +260,7 @@ async def process_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_carts[user_id] = {}
 
 
-def main():
+async def main():
     """Запуск бота"""
     application = Application.builder().token(BOT_TOKEN).build()
 
@@ -275,8 +275,9 @@ def main():
     application.add_handler(CallbackQueryHandler(process_payment, pattern='^pay$'))
 
     logger.info('Бот запущен...')
-    application.run_polling()
+    await application.run_polling()
 
 
 if __name__ == '__main__':
-    main()
+    import asyncio
+    asyncio.run(main())
