@@ -40,12 +40,20 @@ def show_catalog(call):
 
     keyboard.add(types.InlineKeyboardButton('⬅️ Назад', callback_data='back_to_start'))
 
-    bot.edit_message_text(
-        '🏪 Выберите товар:',
-        call.message.chat.id,
-        call.message.message_id,
-        reply_markup=keyboard
-    )
+    try:
+        bot.edit_message_text(
+            '🏪 Выберите товар:',
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=keyboard
+        )
+    except:
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_message(
+            call.message.chat.id,
+            '🏪 Выберите товар:',
+            reply_markup=keyboard
+        )
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'back_to_start')
@@ -59,12 +67,20 @@ def back_to_start(call):
 
     keyboard.add(types.InlineKeyboardButton('🛒 Корзина', callback_data='cart'))
 
-    bot.edit_message_text(
-        '🏪 Добро пожаловать в магазин Sejaro!\n\nВыберите товар:',
-        call.message.chat.id,
-        call.message.message_id,
-        reply_markup=keyboard
-    )
+    try:
+        bot.edit_message_text(
+            '🏪 Добро пожаловать в магазин Sejaro!\n\nВыберите товар:',
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=keyboard
+        )
+    except:
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_message(
+            call.message.chat.id,
+            '🏪 Добро пожаловать в магазин Sejaro!\n\nВыберите товар:',
+            reply_markup=keyboard
+        )
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('view_'))
@@ -121,11 +137,15 @@ def show_cart(call):
     cart = user_carts.get(user_id, {})
 
     if not cart:
-        bot.edit_message_text(
-            '🛒 Корзина пуста',
-            call.message.chat.id,
-            call.message.message_id
-        )
+        try:
+            bot.edit_message_text(
+                '🛒 Корзина пуста',
+                call.message.chat.id,
+                call.message.message_id
+            )
+        except:
+            bot.delete_message(call.message.chat.id, call.message.message_id)
+            bot.send_message(call.message.chat.id, '🛒 Корзина пуста')
         return
 
     cart_text = '🛒 Ваша корзина:\n\n'
@@ -144,12 +164,20 @@ def show_cart(call):
     keyboard.add(types.InlineKeyboardButton('📦 Заказать', callback_data='pay'))
     keyboard.add(types.InlineKeyboardButton('🗑️ Очистить корзину', callback_data='clear_cart'))
 
-    bot.edit_message_text(
-        cart_text,
-        call.message.chat.id,
-        call.message.message_id,
-        reply_markup=keyboard
-    )
+    try:
+        bot.edit_message_text(
+            cart_text,
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=keyboard
+        )
+    except:
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_message(
+            call.message.chat.id,
+            cart_text,
+            reply_markup=keyboard
+        )
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'clear_cart')
@@ -160,11 +188,15 @@ def clear_cart(call):
     user_id = call.from_user.id
     user_carts[user_id] = {}
 
-    bot.edit_message_text(
-        '🛒 Корзина очищена',
-        call.message.chat.id,
-        call.message.message_id
-    )
+    try:
+        bot.edit_message_text(
+            '🛒 Корзина очищена',
+            call.message.chat.id,
+            call.message.message_id
+        )
+    except:
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_message(call.message.chat.id, '🛒 Корзина очищена')
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'pay')
@@ -176,11 +208,15 @@ def process_payment(call):
     cart = user_carts.get(user_id, {})
 
     if not cart:
-        bot.edit_message_text(
-            '🛒 Корзина пуста',
-            call.message.chat.id,
-            call.message.message_id
-        )
+        try:
+            bot.edit_message_text(
+                '🛒 Корзина пуста',
+                call.message.chat.id,
+                call.message.message_id
+            )
+        except:
+            bot.delete_message(call.message.chat.id, call.message.message_id)
+            bot.send_message(call.message.chat.id, '🛒 Корзина пуста')
         return
 
     total = sum(PRODUCTS[name]['price'] * qty for name, qty in cart.items())
@@ -201,19 +237,27 @@ def process_payment(call):
         bot.send_message(ADMIN_ID, order_text)
     except Exception as e:
         logger.error(f'Ошибка при отправке админу: {e}')
-        bot.edit_message_text(
-            '❌ Ошибка при оформлении заказа',
-            call.message.chat.id,
-            call.message.message_id
-        )
+        try:
+            bot.edit_message_text(
+                '❌ Ошибка при оформлении заказа',
+                call.message.chat.id,
+                call.message.message_id
+            )
+        except:
+            bot.delete_message(call.message.chat.id, call.message.message_id)
+            bot.send_message(call.message.chat.id, '❌ Ошибка при оформлении заказа')
         return
 
     payment_msg = f'✅ Заказ отправлен администратору!\n\n{PAYMENT_DETAILS}'
-    bot.edit_message_text(
-        payment_msg,
-        call.message.chat.id,
-        call.message.message_id
-    )
+    try:
+        bot.edit_message_text(
+            payment_msg,
+            call.message.chat.id,
+            call.message.message_id
+        )
+    except:
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_message(call.message.chat.id, payment_msg)
 
     user_carts[user_id] = {}
 
