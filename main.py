@@ -262,6 +262,8 @@ async def process_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     """Запуск бота"""
+    import asyncio
+
     application = Application.builder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler('start', start))
@@ -275,6 +277,12 @@ def main():
     application.add_handler(CallbackQueryHandler(process_payment, pattern='^pay$'))
 
     logger.info('Бот запущен...')
+
+    try:
+        asyncio.get_event_loop()
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
