@@ -234,7 +234,9 @@ def process_payment(call):
     order_text += f'\n💰 Сумма к оплате: {total}₸'
 
     try:
-        bot.send_message(ADMIN_ID, order_text)
+        keyboard = types.InlineKeyboardMarkup()
+        keyboard.add(types.InlineKeyboardButton('✅ Заказ обработан', callback_data=f'order_done_{user_id}'))
+        bot.send_message(ADMIN_ID, order_text, reply_markup=keyboard)
     except Exception as e:
         logger.error(f'Ошибка при отправке админу: {e}')
         try:
@@ -272,6 +274,13 @@ def process_payment(call):
         '🏪 Выберите товар для следующего заказа:',
         reply_markup=keyboard
     )
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('order_done_'))
+def order_done(call):
+    """Удаляет сообщение заказа после обработки"""
+    bot.answer_callback_query(call.id, '✅ Заказ удален', show_alert=False)
+    bot.delete_message(call.message.chat.id, call.message.message_id)
 
 
 def main():
