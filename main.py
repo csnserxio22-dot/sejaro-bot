@@ -16,27 +16,6 @@ def start(message):
     user_id = message.from_user.id
     user_carts[user_id] = {}
 
-    # Reply-кнопка для iPhone и других платформ
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
-    markup.add(types.KeyboardButton('📚 Открыть каталог'))
-
-    bot.send_message(
-        message.chat.id,
-        '🏪 Добро пожаловать в магазин Sejaro!',
-        reply_markup=markup
-    )
-
-
-@bot.message_handler(func=lambda message: message.text == '📚 Открыть каталог')
-def open_catalog(message):
-    """Открывает каталог товаров"""
-    user_id = message.from_user.id
-    if user_id not in user_carts:
-        user_carts[user_id] = {}
-
-    # Скрываем Reply-кнопку
-    markup = types.ReplyKeyboardRemove()
-
     keyboard = types.InlineKeyboardMarkup()
     for product_name in PRODUCTS.keys():
         keyboard.add(types.InlineKeyboardButton(f'ℹ️ {product_name}', callback_data=f'view_{product_name}'))
@@ -45,7 +24,7 @@ def open_catalog(message):
 
     bot.send_message(
         message.chat.id,
-        '🏪 Выберите товар:',
+        '🏪 Добро пожаловать в магазин Sejaro!\n\nВыберите товар:',
         reply_markup=keyboard
     )
 
