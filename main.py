@@ -38,7 +38,7 @@ def show_catalog(call):
     for product_name in PRODUCTS.keys():
         keyboard.add(types.InlineKeyboardButton(f'ℹ️ {product_name}', callback_data=f'view_{product_name}'))
 
-    keyboard.add(types.InlineKeyboardButton('⬅️ Назад', callback_data='back_to_start'))
+    keyboard.add(types.InlineKeyboardButton('🛒 Корзина', callback_data='cart'))
 
     try:
         bot.edit_message_text(
@@ -69,7 +69,7 @@ def back_to_start(call):
 
     try:
         bot.edit_message_text(
-            '🏪 Добро пожаловать в магазин Sejaro!\n\nВыберите товар:',
+            '🏪 Выберите товар:',
             call.message.chat.id,
             call.message.message_id,
             reply_markup=keyboard
@@ -78,7 +78,7 @@ def back_to_start(call):
         bot.delete_message(call.message.chat.id, call.message.message_id)
         bot.send_message(
             call.message.chat.id,
-            '🏪 Добро пожаловать в магазин Sejaro!\n\nВыберите товар:',
+            '🏪 Выберите товар:',
             reply_markup=keyboard
         )
 
