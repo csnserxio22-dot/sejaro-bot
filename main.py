@@ -163,10 +163,12 @@ def process_payment(call):
         return
 
     items = [{'product': name, 'qty': qty} for name, qty in cart.items()]
+    username = call.from_user.username or ''
     try:
         requests.post(N8N_WEBHOOK_URL, json={
             'source': 'telegram',
             'chat_id': str(user_id),
+            'username': username,
             'intent': 'start_order',
             'items': items
         }, timeout=15)
