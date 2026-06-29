@@ -83,10 +83,22 @@ def view_product(call):
     keyboard.add(types.InlineKeyboardButton('➕ Добавить в корзину', callback_data=f'add_{product_name}'))
     keyboard.add(types.InlineKeyboardButton('⬅️ Назад в меню', callback_data='show_catalog'))
     keyboard.add(types.InlineKeyboardButton('🛒 Корзина', callback_data='cart'))
-    try:
-        bot.edit_message_text(text, call.message.chat.id, call.message.message_id, reply_markup=keyboard)
-    except:
-        bot.send_message(call.message.chat.id, text, reply_markup=keyboard)
+    photo_id = product.get('photo_id')
+    if photo_id:
+        try:
+            bot.send_photo(call.message.chat.id, photo=photo_id, caption=text, reply_markup=keyboard)
+            bot.delete_message(call.message.chat.id, call.message.message_id)
+        except Exception as e:
+            logger.warning(f'send_photo failed for {product_name}: {e}')
+            try:
+                bot.edit_message_text(text, call.message.chat.id, call.message.message_id, reply_markup=keyboard)
+            except:
+                bot.send_message(call.message.chat.id, text, reply_markup=keyboard)
+    else:
+        try:
+            bot.edit_message_text(text, call.message.chat.id, call.message.message_id, reply_markup=keyboard)
+        except:
+            bot.send_message(call.message.chat.id, text, reply_markup=keyboard)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('add_'))
