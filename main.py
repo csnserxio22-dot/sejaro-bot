@@ -190,13 +190,6 @@ def process_payment(call):
         )
 
 
-@bot.message_handler(content_types=['photo'])
-def capture_photo_id(message):
-    if message.from_user.id == 974477663:
-        file_id = message.photo[-1].file_id
-        bot.reply_to(message, f'file_id:\n`{file_id}`', parse_mode='Markdown')
-
-
 def main():
     logger.info('Бот запущен...')
     bot.infinity_polling(allowed_updates=['message', 'callback_query'])

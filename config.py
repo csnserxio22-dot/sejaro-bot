@@ -25,7 +25,7 @@ PRODUCTS = {
     'Sejaro 10mg': {
         'price': 135000,
         'description': 'Седжаро раствор для п/к введ. шприц-ручка 10мг/доза 2,4мл + Игла 4шт',
-        'photo_id': None,
+        'photo_id': 'AgACAgIAAxkDAAIB3mpCDxs-kplIDLS_TZEMlUX3JiYxAAIYF2sbO7MQSsEgnC4ZhPntAQADAgADbQADPAQ',
     },
     'Sejaro 12.5': {
         'price': 145000,
