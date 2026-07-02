@@ -7,6 +7,11 @@ from config import BOT_TOKEN, PRODUCTS, N8N_WEBHOOK_URL
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Авто-повтор запросов к Telegram при обрыве соединения (Connection reset by peer и т.п.)
+telebot.apihelper.RETRY_ON_ERROR = True
+telebot.apihelper.CONNECT_TIMEOUT = 15
+telebot.apihelper.READ_TIMEOUT = 30
+
 bot = telebot.TeleBot(BOT_TOKEN)
 user_carts = {}
 active_sessions = set()  # user_ids с активным диалогом Claude
